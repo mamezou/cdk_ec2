@@ -3,6 +3,7 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as cloudwatch from 'aws-cdk-lib/aws-cloudwatch';
 import * as cw_actions from 'aws-cdk-lib/aws-cloudwatch-actions';
 import { Construct } from 'constructs';
+import { SnsAction } from 'aws-cdk-lib/aws-cloudwatch-actions';
 
 export class CwtestStack extends Stack {
   constructor(scope: Construct, id: string, props?: StackProps) {
@@ -59,37 +60,29 @@ export class CwtestStack extends Stack {
       })
     });
 
+    const instanceId = instance.instanceId;
+
     // create new cloudwatch metric
     const metric = new cloudwatch.Metric({
       namespace: 'AWS/EC2',
       metricName: 'CPUUtilization',
       period: Duration.minutes(5),
+      dimensionsMap: {
+        InstanceId: instanceId,
+      },
     });
 
-    // add alarm
-    // const alarm = new cloudwatch.Alarm(this, 'Alarm', {
-    //   metric,
-    //   threshold: 50,
-    //   evaluationPeriods: 1,
-    //   alarmDescription: 'Alarm when CPU is above 50%',
-    //   actionsEnabled: true,
-    //   alarmActions: [
-    //     new cw_actions.SnsAction(this, 'SnsAction', {
-    //       topic: new cw_actions.SnsTopic(this, 'SnsTopic', {
-    //         displayName: 'AlarmTopic',
-    //       }),
-    //     }),
-    //   ],
-    // });
-
-
     // create new cloudwatch alarm
-    // const alarm = new cloudwatch.Alarm(this, 'Alarm', {
-    //   metric,
-    //   threshold: 80,
-    //   evaluationPeriods: 1,
-    //   treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
-    // });
+    const alarm = new cloudwatch.Alarm(this, 'Alarm', {
+      metric,
+      threshold: 80,
+      evaluationPeriods: 1,
+      alarmDescription: 'Alarm when CPU is above 80%',
+      actionsEnabled: true,
+    });
+
+    // alarm.addAlarmAction(new SnsAction(this, 'SnsAction', {}));
+
 
     // todo : add cpu alarm from cloudwatch to sns
 
